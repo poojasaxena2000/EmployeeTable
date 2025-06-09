@@ -109,19 +109,18 @@
 
 
 
-
-
-
 import React, { useEffect, useState } from 'react';
 
 const EmployeeTable = () => {
   const [employees, setEmployees] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const rowsPerPage = 10;
 
   useEffect(() => {
+    setLoading(true);
     fetch('https://geektrust.s3-ap-southeast-1.amazonaws.com/adminui-problem/members.json')
       .then((res) => {
         if (!res.ok) {
@@ -131,17 +130,17 @@ const EmployeeTable = () => {
       })
       .then((data) => {
         setEmployees(data);
-        setError(null);
+        setLoading(false);
       })
       .catch(() => {
         setError('failed to fetch data');
         alert('failed to fetch data');
+        setLoading(false);
       });
   }, []);
 
   const totalPages = Math.ceil(employees.length / rowsPerPage);
-  const startIndex = (currentPage - 1) * rowsPerPage;
-  const currentEmployees = employees.slice(startIndex, startIndex + rowsPerPage);
+  const currentEmployees = employees.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
   const handlePrevious = () => {
     if (currentPage > 1) {
@@ -155,9 +154,12 @@ const EmployeeTable = () => {
     }
   };
 
+  if (loading) return <p>Loading...</p>;
+
   return (
     <div style={{ padding: '2rem', fontFamily: 'Arial' }}>
       <h2 style={{ textAlign: 'center' }}>Employee Data Table</h2>
+
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead style={{ backgroundColor: '#008971', color: 'white' }}>
           <tr>
@@ -167,7 +169,7 @@ const EmployeeTable = () => {
             <th style={thStyle}>Role</th>
           </tr>
         </thead>
-        <tbody key={currentPage}>
+        <tbody>
           {currentEmployees.map((emp) => (
             <tr key={emp.id}>
               <td style={tdStyle}>{emp.id}</td>
@@ -184,13 +186,17 @@ const EmployeeTable = () => {
           type="button"
           onClick={handlePrevious}
           disabled={currentPage === 1}
-          style={{ ...btnStyle, opacity: currentPage === 1 ? 0.5 : 1 }}
+          style={{
+            ...btnStyle,
+            opacity: currentPage === 1 ? 0.5 : 1,
+            cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+          }}
           data-testid="prev-btn"
         >
           Previous
         </button>
 
-        <span style={{ margin: '0 10px' }} data-testid="current-page">
+        <span data-testid="current-page" style={{ margin: '0 10px', fontWeight: 'bold' }}>
           {currentPage}
         </span>
 
@@ -198,7 +204,11 @@ const EmployeeTable = () => {
           type="button"
           onClick={handleNext}
           disabled={currentPage === totalPages}
-          style={{ ...btnStyle, opacity: currentPage === totalPages ? 0.5 : 1 }}
+          style={{
+            ...btnStyle,
+            opacity: currentPage === totalPages ? 0.5 : 1,
+            cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+          }}
           data-testid="next-btn"
         >
           Next
@@ -227,8 +237,6 @@ const btnStyle = {
   color: 'white',
   border: 'none',
   borderRadius: '4px',
-  cursor: 'pointer',
 };
 
 export default EmployeeTable;
-
